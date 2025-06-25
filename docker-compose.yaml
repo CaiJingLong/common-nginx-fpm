@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   web:
-    image: common-nginx-fpm-alpine:latest
+    # image: common-nginx-fpm-alpine:latest
+    build: .
     container_name: ${PROJECT_NAME:-nginx-fpm-app}
     restart: unless-stopped
     ports:
@@ -26,8 +27,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEMORY_LIMIT:-512M}
-          cpus: '${CPU_LIMIT:-1.0}'
+          memory: ${MEMORY_LIMIT:-4096M}
+          cpus: '${CPU_LIMIT:-4.0}'
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s

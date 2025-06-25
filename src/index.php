@@ -115,7 +115,9 @@ $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
                 <div class="info-card">
                     <h3>🔧 已安装扩展</h3>
                     <?php
-                    $extensions = ['pdo_mysql', 'pdo_pgsql', 'pgsql', 'mysqli', 'opcache', 'curl', 'json', 'mbstring'];
+                    // $extensions = ['pdo_mysql', 'pdo_pgsql', 'pgsql', 'mysqli', 'opcache', 'curl', 'json', 'mbstring'];
+                    // 读取系统的所有扩展
+                    $extensions = get_loaded_extensions();
                     foreach ($extensions as $ext) {
                         $status = extension_loaded($ext) ? 'success' : 'info';
                         $icon = extension_loaded($ext) ? '✅' : '❌';
