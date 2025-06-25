@@ -10,15 +10,79 @@ RUN apk add --no-cache \
     supervisor \
     postgresql-dev \
     mysql-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    libwebp-dev \
+    libxpm-dev \
+    libzip-dev \
+    bzip2-dev \
+    gettext-dev \
+    libxslt-dev \
+    openldap-dev \
+    libsodium-dev \
+    oniguruma-dev \
+    linux-headers \
+    autoconf \
     && rm -rf /var/cache/apk/*
 
-# 安装常用PHP扩展
-RUN docker-php-ext-install \
-    pdo_mysql \
-    pdo_pgsql \
-    pgsql \
-    mysqli \
-    opcache
+# 配置GD扩展
+RUN docker-php-ext-configure gd \
+    --with-freetype \
+    --with-jpeg \
+    --with-webp \
+    --with-xpm
+
+# 安装PHP扩展 - 单独安装以最大化缓存利用
+# 基础数学扩展
+RUN docker-php-ext-install -j$(nproc) bcmath
+RUN docker-php-ext-install -j$(nproc) bz2
+RUN docker-php-ext-install -j$(nproc) zip
+
+# 图像处理扩展
+RUN docker-php-ext-install -j$(nproc) gd
+RUN docker-php-ext-install -j$(nproc) exif
+
+# 数据库核心扩展
+RUN docker-php-ext-install -j$(nproc) pdo
+RUN docker-php-ext-install -j$(nproc) pdo_mysql
+RUN docker-php-ext-install -j$(nproc) pdo_pgsql
+RUN docker-php-ext-install -j$(nproc) pdo_sqlite
+RUN docker-php-ext-install -j$(nproc) mysqli
+RUN docker-php-ext-install -j$(nproc) pgsql
+
+# XML处理扩展
+RUN docker-php-ext-install -j$(nproc) dom
+RUN docker-php-ext-install -j$(nproc) xml
+RUN docker-php-ext-install -j$(nproc) xmlreader
+RUN docker-php-ext-install -j$(nproc) xmlwriter
+RUN docker-php-ext-install -j$(nproc) simplexml
+RUN docker-php-ext-install -j$(nproc) xsl
+RUN docker-php-ext-install -j$(nproc) soap
+
+# 系统和网络扩展
+RUN docker-php-ext-install -j$(nproc) pcntl
+RUN docker-php-ext-install -j$(nproc) posix
+RUN docker-php-ext-install -j$(nproc) sockets
+# 安装FTP扩展前添加构建依赖
+RUN apk add --no-cache --virtual .build-deps file re2c g++
+RUN docker-php-ext-install -j$(nproc) ftp
+RUN apk del .build-deps
+
+# 其他常用扩展
+RUN docker-php-ext-install -j$(nproc) fileinfo
+RUN docker-php-ext-install -j$(nproc) gettext
+RUN docker-php-ext-install -j$(nproc) mbstring
+RUN docker-php-ext-install -j$(nproc) opcache
+RUN docker-php-ext-install -j$(nproc) shmop
+
+# 安装LDAP扩展 (需要特殊配置)
+RUN docker-php-ext-configure ldap --with-libdir=lib/ && \
+    docker-php-ext-install ldap
+
+# 安装Redis扩展
+RUN apk add --no-cache make
+RUN pecl install redis && docker-php-ext-enable redis
 
 # 创建必要的目录
 RUN mkdir -p /var/www/html \

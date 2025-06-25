@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  web:
+    image: common-nginx-fpm-alpine:latest
+    container_name: ${PROJECT_NAME:-nginx-fpm-app}
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    volumes:
+      # 代码目录
+      - ${CODE_PATH:-./src}:/var/www/html
+      # 自定义配置文件 (可选，取消注释以启用)
+      # - ${NGINX_CONFIG:-./config/nginx.conf}:/etc/nginx/nginx.conf:ro
+      # - ${PHP_CONFIG:-./config/php.ini}:/usr/local/etc/php/conf.d/custom.ini:ro
+      # - ${FPM_CONFIG:-./config/www.conf}:/usr/local/etc/php-fpm.d/custom.conf:ro
+      # 日志目录 (可选)
+      # - ${LOG_PATH:-./logs}:/var/log
+    environment:
+      - TZ=${TIMEZONE:-Asia/Shanghai}
+    # 安全配置 (生产环境推荐，取消注释以启用)
+    # read_only: true
+    # tmpfs:
+    #   - /tmp
+    #   - /var/run
+    deploy:
+      resources:
+        limits:
+          memory: ${MEMORY_LIMIT:-512M}
+          cpus: '${CPU_LIMIT:-1.0}'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

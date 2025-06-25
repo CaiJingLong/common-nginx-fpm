@@ -29,6 +29,7 @@
 - 支持 PHP 文件动态处理和静态资源服务
 - 预装常用 PHP 扩展（PDO MySQL, PDO PostgreSQL, PostgreSQL, MySQLi, OPcache）
 - 支持外部配置文件覆盖
+- **端口重定向修复** - 支持任意端口映射 (如 `-p 8080:80`)
 - 使用 Supervisor 管理进程
 - 包含健康检查端点
 
@@ -105,23 +106,66 @@ docker run -d -p 80:80 common-nginx-fpm
 
 访问 `http://localhost/health` 进行健康检查。
 
-## Docker Compose 示例
+## Docker Compose 使用
 
-```yaml
-version: '3.8'
+### 🚀 一键启动 (推荐)
 
-services:
-  web:
-    build: .
-    ports:
-      - "80:80"
-    volumes:
-      - ./src:/var/www/html
-      - ./config/custom-nginx.conf:/etc/nginx/nginx.conf
-      - ./config/custom-php.ini:/usr/local/etc/php/conf.d/custom.ini
-    environment:
-      - TZ=Asia/Shanghai
+使用提供的启动脚本，一键配置和启动环境：
+
+```bash
+# 启动开发环境 (端口8000)
+./start.sh dev
+
+# 启动生产环境 (端口80)
+./start.sh prod
+
+# 查看服务状态
+./start.sh status
+
+# 查看日志
+./start.sh logs
+
+# 停止服务
+./start.sh stop
 ```
+
+### 📋 手动配置
+
+如果需要手动配置，请按以下步骤：
+
+1. **复制环境变量文件**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **编辑配置** (根据需要修改 `.env` 文件)
+   ```bash
+   # 基础配置
+   PROJECT_NAME=my-web-app
+   WEB_PORT=80
+   CODE_PATH=./src
+
+   # 数据库配置
+   MYSQL_PASSWORD=your_strong_password
+   ```
+
+3. **启动服务**
+   ```bash
+   # 启动服务
+   docker-compose up -d
+
+   # 查看日志
+   docker-compose logs -f
+   ```
+
+### 环境配置
+
+详细的环境变量配置请参考 `.env.example` 文件，主要包括：
+
+- **项目配置**: 项目名称、时区设置
+- **Web服务**: 端口、代码路径
+- **性能配置**: 内存和CPU限制
+- **自定义配置**: 可选的配置文件覆盖
 
 ## 环境变量
 
@@ -141,26 +185,118 @@ services:
 - PHP-FPM 错误日志：`/var/log/php-fpm/www-error.log`
 - PHP-FPM 慢日志：`/var/log/php-fpm/slow.log`
 
+## 使用示例
+
+### 开发环境设置
+
+```bash
+# 1. 克隆或创建项目
+mkdir my-web-project && cd my-web-project
+
+# 2. 复制Docker配置
+cp /path/to/common-nginx-fpm/* .
+
+# 3. 设置环境变量
+cp .env.example .env
+# 编辑 .env 文件设置开发环境配置
+
+# 4. 创建代码目录
+mkdir -p src
+
+# 5. 启动开发环境
+docker-compose up -d web mysql redis
+
+# 6. 访问应用
+open http://localhost
+```
+
+### 生产环境部署
+
+```bash
+# 1. 设置生产环境变量
+cat > .env << EOF
+PROJECT_NAME=prod-webapp
+WEB_PORT=80
+CODE_MOUNT_MODE=ro
+READ_ONLY=true
+MEMORY_LIMIT=512M
+CPU_LIMIT=1.0
+MYSQL_PASSWORD=your_very_strong_password
+EOF
+
+# 2. 启动生产环境
+docker-compose up -d
+
+# 3. 验证部署
+curl http://localhost/health
+```
+
 ## 故障排除
+
+### 常见问题
+
+**1. 容器启动失败**
+```bash
+# 查看容器状态
+docker-compose ps
+
+# 查看启动日志
+docker-compose logs web
+```
+
+**2. PHP文件不执行，显示源码**
+```bash
+# 检查nginx配置
+docker exec <container> nginx -t
+
+# 检查PHP-FPM状态
+docker exec <container> php-fpm -t
+```
+
+**3. 端口重定向问题**
+```bash
+# 测试重定向功能
+./tools/test-redirect.sh 8080
+
+# 检查nginx重定向配置
+docker exec <container> nginx -T | grep -E "(port_in_redirect|server_name_in_redirect)"
+```
 
 ### 查看日志
 
 ```bash
-# 查看容器日志
-docker logs <container_id>
+# Docker Compose日志
+docker-compose logs -f web
+docker-compose logs -f mysql
 
-# 进入容器查看详细日志
-docker exec -it <container_id> bash
-tail -f /var/log/nginx/error.log
-tail -f /var/log/php-fpm/www-error.log
+# 容器内日志
+docker exec <container> tail -f /var/log/nginx/error.log
+docker exec <container> tail -f /var/log/php-fpm/www-error.log
 ```
 
-### 测试配置
+### 配置测试
 
 ```bash
 # 测试 Nginx 配置
-docker exec <container_id> nginx -t
+docker exec <container> nginx -t
 
 # 测试 PHP-FPM 配置
-docker exec <container_id> php-fpm -t
+docker exec <container> php-fpm -t
+
+# 测试 PHP 扩展
+docker exec <container> php -m
+```
+
+### 性能调优
+
+```bash
+# 查看资源使用
+docker stats
+
+# 调整PHP-FPM进程数
+# 编辑 config/www.conf
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
 ```
