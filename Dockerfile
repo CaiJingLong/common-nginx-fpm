@@ -84,6 +84,9 @@ RUN docker-php-ext-configure ldap --with-libdir=lib/ && \
 RUN apk add --no-cache make
 RUN pecl install redis && docker-php-ext-enable redis
 
+# 安装 tzdate
+RUN apk add --no-cache tzdata
+
 # 创建必要的目录
 RUN mkdir -p /var/www/html \
     /var/log/nginx \
