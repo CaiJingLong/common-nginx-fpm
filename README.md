@@ -7,6 +7,7 @@
 提供两个版本供选择：
 
 ### Alpine版本 (推荐生产环境)
+
 - **镜像标签**: `common-nginx-fpm-alpine`
 - **基础镜像**: `php:8.4-fpm-alpine`
 - **安全状态**: ✅ 0个高危漏洞
@@ -14,6 +15,7 @@
 - **推荐用途**: 生产环境、安全要求高的场景
 
 ### Debian版本 (开发环境可选)
+
 - **镜像标签**: `common-nginx-fpm`
 - **基础镜像**: `php:8.4-fpm`
 - **安全状态**: ⚠️ 152个高危漏洞
@@ -89,6 +91,20 @@ docker run -d -p 80:80 common-nginx-fpm
 - 默认配置：`/usr/local/etc/php-fpm.d/www.conf`
 - 自定义配置：挂载到 `/usr/local/etc/php-fpm.d/custom.conf`
 
+### 添加自定义的启动项
+
+项目通过 docker-entrypoint.sh 脚本启动，启动前会进行配置文件检查。
+
+内置了 supervisor 来管理启动项，项目启动时会加载 supervisor.conf 配置文件。
+
+目前启动项如下：
+
+- nginx
+- php-fpm
+- crond
+
+- 如果你要添加自定义的启动项，可以通过外置 supervisor.conf 文件，然后挂载到 `/etc/supervisor/conf.d/supervisord.conf` 来解决，先复制 [supervisord.conf](config/supervisord.conf) 文件，然后挂载到 `/etc/supervisor/conf.d/supervisord.conf`。
+
 ## 目录结构
 
 ```
@@ -134,11 +150,13 @@ docker run -d -p 80:80 common-nginx-fpm
 如果需要手动配置，请按以下步骤：
 
 1. **复制环境变量文件**
+
    ```bash
    cp .env.example .env
    ```
 
 2. **编辑配置** (根据需要修改 `.env` 文件)
+
    ```bash
    # 基础配置
    PROJECT_NAME=my-web-app
@@ -150,6 +168,7 @@ docker run -d -p 80:80 common-nginx-fpm
    ```
 
 3. **启动服务**
+
    ```bash
    # 启动服务
    docker-compose up -d
@@ -236,6 +255,7 @@ curl http://localhost/health
 ### 常见问题
 
 **1. 容器启动失败**
+
 ```bash
 # 查看容器状态
 docker-compose ps
@@ -245,6 +265,7 @@ docker-compose logs web
 ```
 
 **2. PHP文件不执行，显示源码**
+
 ```bash
 # 检查nginx配置
 docker exec <container> nginx -t
@@ -254,6 +275,7 @@ docker exec <container> php-fpm -t
 ```
 
 **3. 端口重定向问题**
+
 ```bash
 # 测试重定向功能
 ./tools/test-redirect.sh 8080
