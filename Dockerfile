@@ -87,6 +87,12 @@ RUN pecl install redis && docker-php-ext-enable redis
 # 安装 tzdate
 RUN apk add --no-cache tzdata
 
+RUN apk update && apk add logrotate
+
+# 设置时区
+ENV TZ=Asia/Shanghai
+RUN ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
 # 创建必要的目录
 RUN mkdir -p /var/www/html \
     /var/log/nginx \
